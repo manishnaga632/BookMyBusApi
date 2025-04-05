@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.database.connection import get_db
 from api.database.schemas.user import UserCreate, UserLogin, UserResponse
-from api.crud.user import create_user, get_user_by_email
+from api.crud.user import create_user, get_user_by_email, get_user_by_mobile
 from api.security import verify_password
 from fastapi.security import OAuth2PasswordBearer
 from api.token import create_access_token
@@ -24,6 +24,10 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = get_user_by_email(db, user.email)
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    
+    existing_mobile = get_user_by_mobile(db, user.mob_number)
+    if existing_mobile:
+        raise HTTPException(status_code=400, detail="Mobile number already registered")
     return create_user(db, user)
 
 @router.post("/login")

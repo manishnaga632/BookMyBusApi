@@ -40,6 +40,17 @@ def get_user_by_email(db: Session, email: str):
     """
     return db.query(User).filter(User.email == email).first()
 
+# Function to retrieve a user by email
+def get_user_by_mobile(db: Session, mob_number: str):
+    """
+    Fetches a user from the database using their email.
+    
+    :param db: Database session.
+    :param email: User's email address.
+    :return: User object if found, else None.
+    """
+    return db.query(User).filter(User.mob_number == mob_number).first()
+
 # Function to retrieve a user by ID
 def get_user_by_id(db: Session, user_id: int):
     """
