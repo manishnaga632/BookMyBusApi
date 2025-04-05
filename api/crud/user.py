@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from api.database.models.user import User
 from api.database.schemas.user import UserCreate
-
+from datetime import datetime
 from api.security import hash_password
 
 
@@ -19,9 +19,9 @@ def create_user(db: Session, user: UserCreate):
         email=user.email,
         password=hash_password(user.password),  # Hash the password before storing
         mob_number=user.mob_number,
-        role=user.role,
-        created_at=user.created_at,
-        updated_at=user.updated_at
+        role="customer",
+        created_at=datetime.utcnow(),
+        updated_at=None
         
     )
     db.add(db_user)  # Add the user to the database session

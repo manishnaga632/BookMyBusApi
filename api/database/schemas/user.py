@@ -6,9 +6,9 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     mob_number: str
-    role: str
-    created_at:datetime
-    updated_at :datetime
+    # role: str
+    # created_at:datetime
+    # updated_at :datetime
 
 #ye tho wha response body k liye hota hai na iski jrurat nai hai yeha 
 class UserResponse(BaseModel):
