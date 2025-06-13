@@ -2,8 +2,6 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
-
-
 class BookingBase(BaseModel):
     user_id:Optional[int]
     travel_id:int
@@ -11,15 +9,10 @@ class BookingBase(BaseModel):
     to_location: str
     time: str
     book_seats: int
-    
-
-
 class BookingCreate(BookingBase):
     pass
-
 class BookingUpdate(BaseModel):
     book_seats: int
-
 class BookingResponse(BookingBase):
     id: int
     user_id: int
@@ -29,7 +22,6 @@ class BookingResponse(BookingBase):
     total_price: float
     created_at: datetime
     updated_at:datetime
-
 
     class Config:
         from_attributes = True
