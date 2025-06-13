@@ -11,40 +11,39 @@ from sqlalchemy.orm import Session
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Function to create a JWT access token
-def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=30)):
+def create_access_token(user: dict, expires_delta: timedelta = timedelta(minutes=60 * 12)):
     """
     Generates a JWT access token with an expiration time.
-    
-    :param data: Dictionary containing user information to encode in the token.
-    :param expires_delta: Time duration for which the token remains valid (default is 30 minutes).
-    :return: Encoded JWT token.
     """
-    to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})  # Add expiration time to the token payload
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    to_encode = {
+        "sub": user["sub"],    # 'sub' = email
+        "user_id": user["user_id"],    # user_id added in token
+        "exp": datetime.utcnow() + expires_delta
+    }
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-# Function to retrieve the currently authenticated user
+# Function to retrieve the currently authenticated user from the JWT token
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     """
     Decodes the JWT token to extract user information and validate authentication.
-    
-    :param token: JWT token retrieved from the request header.
-    :param db: Database session dependency.
-    :return: Authenticated user object.
     """
     credentials_exception = HTTPException(status_code=401, detail="Could not validate credentials")
+
     try:
-        # Decode the JWT token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")  # Extract email from token payload
-        if email is None:
+        email: str = payload.get("sub")
+        user_id: int = payload.get("user_id")
+        
+        if email is None or user_id is None:
             raise credentials_exception
+
     except JWTError:
-        raise credentials_exception  # Handle invalid token errors
-    
-    # Fetch user details from the database
+        raise credentials_exception
+
+    # Fetch the user from the database using the email
     user = get_user_by_email(db, email)
-    if user is None:
-        raise credentials_exception  # Raise exception if user not found
-    return user
+    if user is None or user.id != user_id:
+        raise credentials_exception
+
+    return user  # Return the authenticated user
