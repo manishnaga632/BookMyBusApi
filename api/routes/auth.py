@@ -1,31 +1,47 @@
-from fastapi import APIRouter, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordBearer
+from datetime import timedelta
+from api.database.schemas.user import UserLogin
 from api.database.connection import get_db
-from api.database.schemas.user import UserCreate, UserLogin, UserResponse
-from api.crud.user import create_user, get_user_by_email, get_user_by_mobile
 from api.security import verify_password
-from api.token import create_access_token
+from api.token import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from api.database.models.user import User
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
-
-@router.post("/register", response_model=UserResponse)
-def register(user: UserCreate, db: Session = Depends(get_db)):
-    if get_user_by_email(db, user.email):
-        raise HTTPException(status_code=400, detail="Email already registered")
-    if get_user_by_mobile(db, user.mob_number):
-        raise HTTPException(status_code=400, detail="Mobile number already registered")
-    return create_user(db, user)
-
-@router.post("/login")
-def login(user_login: UserLogin, db: Session = Depends(get_db)):
-    db_user = get_user_by_email(db, user_login.email)
-
-    if not db_user or not verify_password(user_login.password, db_user.password):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-
-    access_token = create_access_token(user={"sub": db_user.email, "user_id": db_user.id})
-
-    return {"access_token": access_token, "token_type": "bearer"}
+@router.post("/login", response_model=dict)
+async def login(
+    user_data: UserLogin, 
+    db: Session = Depends(get_db)
+):
+    # Find user by email
+    user = db.query(User).filter(User.email == user_data.email).first()
+    
+    # Verify credentials
+    if not user or not verify_password(user_data.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create token with user data
+    access_token = create_access_token(
+        data={
+            "sub": user.email,
+            "user_id": user.id,
+            "role": user.role
+        },
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_info": {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role
+        }
+    }

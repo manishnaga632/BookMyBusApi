@@ -1,69 +1,78 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from fastapi import Query
+from typing import Optional
+from api.database.schemas.user import UserCreate, UserOut, UserUpdateProfile, AdminUpdateUser
 from api.database.connection import get_db
-from api.database.schemas.user import UserResponse, UserUpdate, AdminUserUpdate
-from api.token import get_current_user
-from api.crud.user import update_user_profile, get_all_users, delete_user
+from api.crud import user as user_crud
+from api.database.models.user import User
+from api.token import get_current_user, get_current_admin_user
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter()
 
-@router.get("/profile", response_model=UserResponse)
-def get_profile(current_user: UserResponse = Depends(get_current_user)):
+
+# Anyone can register
+@router.post("/register", response_model=UserOut)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    return user_crud.create_user(db, user)
+
+# ✅ Only admin can get all users
+@router.get("/all_users", response_model=list[UserOut])
+def get_all_users_route(db: Session = Depends(get_db)):
+    return user_crud.get_all_users(db)
+
+
+# ✅ Only admin can view all users
+@router.get("/get_user_by_id/{user_id}", response_model=UserOut)
+def get_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.id != user_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    user = user_crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user
+
+
+
+# ✅ Only admin can delete users
+@router.delete("/delete_users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)):
+    if not user_crud.delete_user(db, user_id):
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"detail": "User deleted"}
+
+# ✅ Logged-in user can update their own profile
+@router.put("/profile_update", response_model=UserOut)
+def update_profile(data: UserUpdateProfile, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return user_crud.update_user_profile(db, current_user.id, data)
+
+# ✅ Admin can update any user
+@router.put("/admin_update/{user_id}", response_model=UserOut)
+def admin_update_user(user_id: int, data: AdminUpdateUser, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin_user)):
+    return user_crud.admin_update_user(db, user_id, data)
+
+
+# ✅ Logged-in user can get their own profile
+@router.get("/profile", response_model=UserOut)
+def get_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
-@router.put("/profile", response_model=UserResponse)
-def update_profile(
-    user_update: UserUpdate,
+
+@router.get("/check-unique")
+def check_unique(
     db: Session = Depends(get_db),
-    current_user: UserResponse = Depends(get_current_user)
+    email: Optional[str] = Query(None),
+    mobile: Optional[str] = Query(None)
 ):
-    update_data = {}
+    if not email and not mobile:
+        raise HTTPException(status_code=400, detail="Email or mobile is required")
 
-    if user_update.new_password:
-        from api.security import hash_password
-        update_data["password"] = hash_password(user_update.new_password)
+    if email and db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
 
-    if user_update.mob_number:
-        update_data["mob_number"] = user_update.mob_number
+    if mobile and db.query(User).filter(User.mobile == mobile).first():
+        raise HTTPException(status_code=409, detail="Mobile number already registered")
 
-    if not update_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No valid fields to update"
-        )
-
-    updated_user = update_user_profile(db, current_user.id, update_data)
-    if not updated_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    return updated_user
-
-@router.get("/all", response_model=list[UserResponse])
-def get_users(db: Session = Depends(get_db)):
-    return get_all_users(db)
-
-@router.put("/{user_id}", response_model=UserResponse)
-def update_user_by_id(
-    user_id: int,
-    user_data: AdminUserUpdate,
-    db: Session = Depends(get_db)
-):
-    updated_user = update_user_profile(db, user_id, user_data.dict(exclude_unset=True))
-    if not updated_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    return updated_user
-
-@router.delete("/{user_id}")
-def delete_user_by_id(user_id: int, db: Session = Depends(get_db)):
-    deleted = delete_user(db, user_id)
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    return {"message": "User deleted successfully"}
+    return {"detail": "Available"}

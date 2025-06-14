@@ -12,3 +12,4 @@ class Contact(Base):
     message = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     seen = Column(Boolean, default=False)
+    # bookings = relationship("Booking", back_populates="user")

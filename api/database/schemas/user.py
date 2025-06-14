@@ -1,39 +1,27 @@
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
-# For user registration
+
 class UserCreate(BaseModel):
-    name: str
+    first_name: str
+    last_name: str
     email: EmailStr
     password: str
-    mob_number: str
+    mobile: str
+    age: int
+    gender: str
+    role: Optional[str] = "user"  
 
-# For normal user update
-class UserUpdate(BaseModel):
-    mob_number: Optional[str] = None
-    new_password: Optional[str] = None
-    confirm_password: Optional[str] = None
 
-    @validator("confirm_password")
-    def passwords_match(cls, confirm_password, values):
-        if values.get('new_password') and confirm_password != values['new_password']:
-            raise ValueError("New password and confirm password do not match")
-        return confirm_password
-
-# For admin-level update
-class AdminUserUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
-    mob_number: Optional[str] = None
-
-# For API response
-class UserResponse(BaseModel):
+class UserOut(BaseModel):
     id: int
-    name: str
+    first_name: str
+    last_name: str
     email: EmailStr
-    mob_number: str
+    mobile: str
+    age: int
+    gender: str
     role: str
     created_at: datetime
     updated_at: datetime
@@ -41,7 +29,31 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# For login
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class UserUpdateProfile(BaseModel):
+    first_name: Optional[str]
+    last_name: Optional[str]
+    mobile: Optional[str]
+    new_password: Optional[str]
+    confirm_password: Optional[str]
+
+class AdminUpdateUser(BaseModel):
+    first_name: Optional[str]=None
+    last_name: Optional[str]=None
+    email: Optional[EmailStr]=None
+    password: Optional[str]=None
+    mobile: Optional[str]=None
+    age: Optional[int]=None
+    gender: Optional[str]=None
+    role: Optional[str]=None
+
+    class Config:
+        from_attributes = True
+
+
+
+
+        
