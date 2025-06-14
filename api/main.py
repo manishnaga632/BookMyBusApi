@@ -16,10 +16,10 @@ app.add_middleware(
 )
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
-app.include_router(travels.router, prefix="/Travels", tags=["Travels"])
-app.include_router(booking.router, prefix="/Booking", tags=["Booking"])
-app.include_router(contact.router, prefix="/Contact", tags=["Contact"])
-app.include_router(admin_profile.router, prefix="/Admin_Profile", tags=["Admin_Profile"])
+app.include_router(travels.router, prefix="/travels", tags=["Travels"])
+app.include_router(booking.router, prefix="/booking", tags=["Booking"])
+app.include_router(contact.router, prefix="/contact", tags=["Contact"])
+app.include_router(admin_profile.router, prefix="/admin_profile", tags=["Admin_Profile"])
 
 
 
