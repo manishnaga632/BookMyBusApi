@@ -1,22 +1,18 @@
+
+    
+
 from sqlalchemy import Column, Integer, String
-from api.database.base import Base
+from api.database.connection import Base  
 
 class AdminProfile(Base):
     __tablename__ = "admin_profiles"
 
     id = Column(Integer, primary_key=True, index=True)
-    address = Column(String(255), index=True)  
-    mobile_number = Column(String(15))  
-    email = Column(String(255), unique=True, index=True, nullable=False)
-
-    twitter_link = Column(String(255), nullable=True)
-    linkedin_link = Column(String(255), nullable=True)
-    facebook_link = Column(String(255), nullable=True)
-    insta_link = Column(String(255), nullable=True)
-    youtube_link = Column(String(255), nullable=True)
-    experience_in_year = Column(Integer)
-    total_trainers = Column(Integer)
-    complete_project_number = Column(Integer)
-    happy_clients_number = Column(Integer)
-    
+    address = Column(String, nullable=False)
+    mobile_number = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    since = Column(Integer, nullable=False)
+    destinations_covered = Column(Integer, nullable=False)
+    travel_partners = Column(Integer, nullable=False)
+    happy_travelers = Column(Integer, nullable=False)
 
