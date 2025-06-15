@@ -5,9 +5,6 @@ from typing import Optional
 class BookingBase(BaseModel):
     user_id:Optional[int]
     travel_id:int
-    from_location: str
-    to_location: str
-    time: str
     book_seats: int
 class BookingCreate(BookingBase):
     pass
