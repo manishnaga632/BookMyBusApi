@@ -52,6 +52,11 @@ def get_all_bookings(db: Session):
 
 def get_booking_by_id(db: Session, booking_id: int):
     return db.query(Booking).filter(Booking.id == booking_id).first()
+# crud/booking.py
+
+def get_bookings_by_user_id(db: Session, user_id: int):
+    return db.query(Booking).filter(Booking.user_id == user_id).all()
+
 
 def update_booking(db: Session, booking_id: int, updated_seats: int):
     booking = get_booking_by_id(db, booking_id)
